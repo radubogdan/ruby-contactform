@@ -1,5 +1,4 @@
 require 'sinatra'
-require 'json'
 require 'redis'
 require 'uuid'
 require 'mandrill'
@@ -19,7 +18,11 @@ helpers do
   end
 end
 
-# Endpoint: /user/register
+# Redirect to gh-pages
+get '/' do
+  redirect "http://radubogdan.github.io/ruby-contactform/"
+end
+
 # Params: email
 # Example: curl --data "email=dotix@debian.org.ro" 127.0.0.1:9292/user/register
 # Return: token for email
