@@ -26,7 +26,7 @@ Message sent%
 **From your website**
 
 ```
-<form action="http://ruby-contactform.herokuapp.com/user/a3484djd-7d2c-4dq1-bs01-9s3861bf1942">
+<form method="POST" action="http://ruby-contactform.herokuapp.com/user/a3484djd-7d2c-4dq1-bs01-9s3861bf1942">
   Name: <input type="text" name="name"><br>
   Email: <input type="text" name="email"><br>
   Subject: <input type="text" name="subject"><br>
