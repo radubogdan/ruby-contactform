@@ -1,7 +1,12 @@
 require 'sinatra'
+require 'sinatra/cross_origin'
 require 'redis'
 require 'uuid'
 require 'mandrill'
+
+configure do
+  enable :cross_origin
+end
 
 # Configure Redis and Mandrill
 redis_uri = URI.parse(ENV["REDISTOGO_URL"])
