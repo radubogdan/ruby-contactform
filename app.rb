@@ -69,9 +69,9 @@ post '/user/:token' do
     sending = m.messages.send message
     
     if sending[0]["status"] == 'sent'
-      {status => 200, message => 'Message sent'}.to_json
+      {"status" => status, "message" => "Message sent"}.to_json
     else
-      {status => 400, message => "#{sending[0]["reject_reason"]}"}.to_json
+      {"status" => 400, "message" => "#{sending[0]["reject_reason"]}"}.to_json
     end
   end
 end
