@@ -26,6 +26,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  json
   mandrill-api
   rack
   redis
