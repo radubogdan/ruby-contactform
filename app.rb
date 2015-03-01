@@ -3,6 +3,7 @@ require 'sinatra/cross_origin'
 require 'redis'
 require 'uuid'
 require 'mandrill'
+require 'json'
 
 configure do
   enable :cross_origin
@@ -55,17 +56,22 @@ post '/user/:token' do
   user_email = (r.hmget "emails", params[:token]).join
 
   if !user_email
-    "User not found: 406"
+    {status => 406, message => 'Email not found'}.to_json
   else
     message = {
       :to => [{ :email => user_email }],
       :from_email => params[:email],
       :subject => params[:subject],
-      :from_name => "Message from #{params[:name]}",
+      :from_name => params[:name],
       :text => params[:message]
     }
 
     sending = m.messages.send message
-    sending[0]["status"] == 'sent' ? "Message sent" : "Reject reason: #{sending[0]["reject_reason"]}"
+    
+    if sending[0]["status"] == 'sent'
+      {status => 200, message => 'Message sent'}.to_json
+    else
+      {status => 400, message => "#{sending[0]["reject_reason"]}"}.to_json
+    end
   end
 end
