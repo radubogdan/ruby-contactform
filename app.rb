@@ -1,7 +1,14 @@
 require 'sinatra'
+require 'sinatra/cross_origin'
 require 'redis'
 require 'uuid'
 require 'sendgrid-ruby'
+require 'mandrill'
+require 'json'
+
+configure do
+  enable :cross_origin
+end
 
 API_KEY = ENV['SENDGRID_API_KEY']
 REDIS_URL = URI.parse(ENV["REDISTOGO_URL"])
