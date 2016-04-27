@@ -9,9 +9,9 @@ Fiels:
 - subject
 - message
 
-### Usage
+### Usage (2 steps)
 
-1) Register your email
+#### 1. Register your email
 
 ```
 $ curl --data "email=your@emailaddress.com" ruby-contactform.herokuapp.com/user/register
@@ -25,7 +25,7 @@ $ curl --data "name=Jane Doe&email=janedoe@email.com&subject=Hello stranger&mess
 {"status":200,"message":"success"}
 ```
 
-2) Edit `action` in your form.
+#### 2. Edit `action` in your form.
 
 ```
 <form method="POST" action="http://ruby-contactform.herokuapp.com/user/a3484djd-7d2c-4dq1-bs01-9s3861bf1942">
