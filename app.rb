@@ -3,7 +3,6 @@ require 'sinatra/cross_origin'
 require 'redis'
 require 'uuid'
 require 'sendgrid-ruby'
-require 'mandrill'
 require 'json'
 
 configure do
