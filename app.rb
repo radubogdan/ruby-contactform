@@ -1,66 +1,72 @@
 require 'sinatra'
 require 'redis'
 require 'uuid'
-require 'mandrill'
+require 'sendgrid-ruby'
 
-# Configure Redis and Mandrill
-redis_uri = URI.parse(ENV["REDISTOGO_URL"])
-mandrill_api_key = ENV["MANDRILL_APIKEY"]
+API_KEY = ENV['SENDGRID_API_KEY']
+REDIS_URL = URI.parse(ENV["REDISTOGO_URL"])
 
-r = Redis.new(:host => redis_uri.host, :port => redis_uri.port, :password => redis_uri.password)
-m = Mandrill::API.new(mandrill_api_key)
+sendgrid_client = SendGrid::Client.new(api_key: API_KEY)
 
-# Helper methods
-helpers do
-  def valid_email?(email)
-    regex = /^[a-zA-Z][\w\.-]*[a-zA-Z0-9]@[a-zA-Z0-9][\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$/
-    email =~ regex ? true : false
-  end
-end
+redis_client = Redis.new(
+  host: REDIS_URL.host,
+  port: REDIS_URL.port,
+  password: REDIS_URL.password
+)
 
 # Redirect to gh-pages
 get '/' do
   redirect "http://radubogdan.github.io/ruby-contactform/"
 end
 
-# Params: email
-# Example: curl --data "email=dotix@debian.org.ro" 127.0.0.1:9292/user/register
-# Return: token for email
+# Params:
+#   email
+# Returns:
+#   status => code,
+#   message => error description or TOKEN
+# Example:
+#   curl --data "email=croitoruradubogdan@gmail.com" localhost:4567/user/register
+#   { "status": 200, "message": "c0dff7ce-9651-44f1-afa6-5172515b1e74" }
 post '/user/register' do
   email = params[:email]
-  not_exist = r.sadd "emailset", email
+  status = redis_client.sadd "emailset", email # true / false
 
-  if !not_exist
-    "Email already registered, 403"
-  elsif email && valid_email?(email)
+  if email && status
     uuid = SecureRandom.uuid
-    r.hset "emails", uuid, email
-    "Your token for #{email} is #{uuid}"
+    redis_client.hset "emails", uuid, email
+    { status: 200, message: uuid }.to_json
   else
-    "Invalid Email address"
+    { status: 403, message: "Email invalid or already registered" }.to_json
   end
 end
 
-# Endpoint: /user/:token
-# Params: email, subject, name, message
-# Example:  curl --data "email=example@gmail.com&name=Example&message=Salut&subject=Hello Dotix" 127.0.0.1:9292/user/3x4mp13-0000-0000
-# Return: status
+# Params:
+#   email,
+#   subject,
+#   name,
+#   message
+# Returns:
+#   status => code,
+#   message => description
+# Example:
+#   curl --data "email=example@gmail.com&name=Example&message=Salut&subject=Hello there" localhost:4567/user/3x4mp13-0000-0000
+#   { "status": 200, "message": "success" }
 post '/user/:token' do
-  # --data is email, name, message
-  user_email = (r.hmget "emails", params[:token]).join
+  user_email = (redis_client.hmget "emails", params[:token]).join
 
-  if !user_email
-    "User not found: 406"
-  else
-    message = {
-      :to => [{ :email => user_email }],
-      :from_email => params[:email],
-      :subject => params[:subject],
-      :from_name => "Message from #{params[:name]}",
-      :text => params[:message]
-    }
-
-    sending = m.messages.send message
-    sending[0]["status"] == 'sent' ? "Message sent" : "Reject reason: #{sending[0]["reject_reason"]}"
+  if user_email.empty?
+    return { status: 406, message: "User not found. Please register first." }.to_json
   end
+
+  mail = SendGrid::Mail.new do |m|
+    m.to = user_email
+    m.from_name = params[:name]
+    m.from = params[:email]
+    m.subject = params[:subject]
+    m.text = params[:message]
+  end
+
+  res = sendgrid_client.send(mail)
+
+  { status: res.code, message: res.body["message"] }.to_json
 end
